@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title> 멜론 티켓 자동호출</title>
+    </head>
+    <body>
+        <h1> ~큥파 부산</h1>
+        <p>var a ;
+
+
+
+            require(["jquery", "underscore", "domReady", "ticketDomain", "ticketCode", "ticketUtil", "js/app/performance/service/performanceService", "js/app/common/service/loginService", "js/app/forU/service/foruService", "js/app/common/service/snsService", "js/app/common/service/popupService", "js/app/performance/service/preSaleService", "js/app/performance/service/scheduleService", "js/app/performance/service/reservationService", "js/app/common/service/couponService", "js/app/performance/service/tabMenuService"], function($, underscore, domReady, tktDomain, ticketCode, ticketUtil, performanceService, loginService, foruService, snsService, popupService, preSaleService, scheduleService, reservationService, couponService, tabMenuService) {
+            
+            
+            
+            'use strict';
+            
+            
+            
+            /**
+            
+            * 시작 함수
+            
+            */
+            
+            domReady(function() {
+            
+            var prodId = $("#prodIdNum").val();
+            
+            
+            
+            performanceService.init(prodId);
+            
+            
+            
+            var alertParams = {
+            
+            prodId: prodId,
+            
+            alertMessage: $("#global_ticket_alert_message_data").val(),
+            
+            alertYn: $("#global_ticket_alert_message_yn").val() != "" ? $("#global_ticket_alert_message_yn").val() : "N",
+            
+            captchaYn: $("#global_ticket_captcha_yn").val()
+            
+            };
+            
+            
+            
+            popupService.service.performanceAlertMessageInit(alertParams);
+            
+            //초기 레이어 팝업 호출
+            
+            if ($('#simpliedProductYn').val() != 'Y') {
+            
+            foruService.service.foruInfoInit(prodId);
+            
+            //상품상세 forU 버튼 초기 셋팅 함수
+            
+            }
+            
+            
+            
+            couponService.service.setCookieCoopInit(prodId);
+            
+            //상품상세 연동사 쿠폰 셋팅
+            
+            
+            
+            tabMenuService.service.setTabDisplayInit();
+            
+            //탭 메뉴 초기화 함수
+            
+            tabMenuService.init(prodId);
+            
+            buttonInit();
+            
+            });
+            
+            
+            
+            function buttonInit() {
+            
+            
+            
+            /**
+            
+            * 공연 플래너 담기 버튼
+            
+            */
+            
+            $('#btn_add_planner').on('click', function(e) {
+            
+            e.preventDefault();
+            
+            
+            
+            if (isMelonLogin()) {
+            
+            var prodId = $("#prodIdNum").val();
+            
+            foruService.service.addPlanner(prodId);
+            
+            } else {
+            
+            loginService.service.melonPopupLogin();
+            
+            }
+            
+            });
+            
+            
+            
+            /**
+            
+            * 닫기 버튼
+            
+            */
+            
+            $(document).off("click", "#noticeAlert_layerpopup_close").on("click", "#noticeAlert_layerpopup_close", function() {
+            
+            $("#noticeAlert").remove();
+            
+            });
+            
+            
+            
+            /**
+            
+            * 다시보지 않기 버튼
+            
+            */
+            
+            $(document).off("click", "#noticeAlert_layerpopup_cookie").on("click", "#noticeAlert_layerpopup_cookie", function() {
+            
+            
+            
+            var prodId = $("#prodIdNum").val();
+            
+            var ischecked = $(this).is(":checked");
+            
+            
+            
+            var alertParams = {
+            
+            prodId: prodId,
+            
+            ischecked: ischecked
+            
+            };
+            
+            
+            
+            popupService.service.performanceAlertMessageBtn(alertParams);
+            
+            });
+            
+            
+            
+            /**
+            
+            * 상품 상세 페이스북 공유하기 버튼 클릭 이벤트
+            
+            */
+            
+            $('#musFacebook').on('click', function(e) {
+            
+            var prodId = $("#prodIdNum").val();
+            
+            var productTitle = $(this).attr("data-producttitle");
+            
+            var imgPath = $(this).attr("data-posterimg");
+            
+            var periodinfo = $(this).attr("data-periodinfo");
+            
+            var placename = $(this).attr("data-placename");
+            
+            
+            
+            var imgUrl = '';
+            
+            
+            
+            if (imgPath) {
+            
+            imgUrl = commonDomain.GLOBAL_CDN_TICKET_HTTPS + imgPath;
+            
+            }
+            
+            
+            
+            var params = $.param({
+            
+            type: commonCode.CURRENT_PAGE_TYPE,
+            
+            contId: prodId
+            
+            });
+            
+            
+            
+            var description = periodinfo + placename;
+            
+            description = description.replace(/_SLASH_/g, '/');
+            
+            
+            
+            snsService.service.shareFacebookWithUrl(params);
+            
+            });
+            
+            
+            
+            /**
+            
+            * 트위터 공유 버튼
+            
+            */
+            
+            $("#musTwitter").click(function() {
+            
+            var prodId = $("#prodIdNum").val();
+            
+            var productTitle = $(this).attr("data-producttitle");
+            
+            
+            
+            var params = $.param({
+            
+            type: commonCode.CURRENT_PAGE_TYPE,
+            
+            contId: prodId
+            
+            });
+            
+            
+            
+            snsService.service.shareTwitter(prodId, productTitle, params);
+            
+            });
+            
+            
+            
+            /**
+            
+            * 상품상세 - 상세정보 탭 - 출연진
+            
+            * 선호 아티스트 등록/해제 버튼(기존 버튼)
+            
+            */
+            
+            $('input[id^=chk_foruArtist_]').on('click', function(e) {
+            
+            e.preventDefault();
+            
+            
+            
+            var artistid = $(this).attr("data-artistid");
+            
+            
+            
+            if (isMelonLogin()) {
+            
+            foruService.service.toggleForUArtist(artistid);
+            
+            } else {
+            
+            loginService.service.melonPopupLogin();
+            
+            }
+            
+            });
+            
+            
+            
+            /**
+            
+            * 상품상세 - 상세정보 탭 - 출연진
+            
+            * 출연진 더보기 버튼
+            
+            */
+            
+            $(".box_artist_checking .more").on("click", function() {
+            
+            var $item = $(this).parents('.box_artist_checking').find('.scroll li');
+            
+            var $active = $(this).parents('.box_artist_checking').find('.scroll');
+            
+            if ($item.length <= 18) {
+            
+            $active.addClass('sm_more');
+            
+            }
+            
+            if ($(this).hasClass('on')) {
+            
+            $(this).removeClass('on');
+            
+            $active.removeClass('on').scrollTop(0);
+            
+            $active.removeClass('sm_more');
+            
+            } else {
+            
+            $(this).addClass('on');
+            
+            $active.addClass('on');
+            
+            }
+            
+            });
+            
+            
+            
+            /**
+            
+            * 상품상세 -> 캐스팅스케줄 보기 버튼
+            
+            */
+            
+            $("#castingInfoBtn").on("click", function() {
+            
+            var prodId = $(this).attr("data-prodid");
+            
+            
+            
+            if (prodId != null) {
+            
+            /*window.open*/('/performance/popup/casting_calendar.htm?prodId=' + prodId, 'castingCalendarPopup', 'scrollbars=yes,resizable=no,top=100,left=100,width=975,height=910');
+            
+            }
+            
+            });
+            
+            
+            
+            /**
+            
+            * 일자 리스트
+            
+            * 회차 - 일자선택
+            
+            */
+            
+            $(document).off("click", ".item_date").on("click", ".item_date", function() {
+            
+            var $this = $(this);
+            
+            var paramsObj = {
+            
+            "perfDay": $this.attr("data-perfday"),
+            
+            "prodId": $this.attr("data-prodid"),
+            
+            "pocCode": $this.attr("data-poccode"),
+            
+            "perfTypeCode": $this.attr("data-perftypecode"),
+            
+            "sellTypeCode": $this.attr("data-selltypecode"),
+            
+            "seatCntDisplayYn": $this.attr("data-seatcntdisplayyn"),
+            
+            "interlockTypeCode": $("#global_ticket_interlockTypeCode").val()
+            
+            };
+            
+            
+            
+            scheduleService.service.displayTimeListSchedule(paramsObj);
+            
+            });
+            
+            
+            
+            /**
+            
+            * 달력 리스트
+            
+            * 회차 - 일자 선택
+            
+            */
+            
+            $(document).off("click", ".ticketCalendarBtn").on("click", ".ticketCalendarBtn", function(e) {
+            
+            e.preventDefault();
+            
+            var $this = $(this);
+            
+            $this.blur();
+            
+            
+            
+            var paramsObj = {
+            
+            "perfDay": $this.attr('data-perfday'),
+            
+            "prodId": $this.attr('data-prodid'),
+            
+            "pocCode": $this.attr('data-poccode'),
+            
+            "perfTypeCode": $this.attr('data-perftypecode'),
+            
+            "sellTypeCode": $this.attr('data-selltypecode'),
+            
+            "seatCntDisplayYn": $this.attr('data-seatcntdisplayyn'),
+            
+            "interlockTypeCode": $("#global_ticket_interlockTypeCode").val()
+            
+            };
+            
+            
+            
+            scheduleService.service.displayTimeListSchedule(paramsObj);
+            
+            });
+            
+            
+            
+            /**
+            
+            * 시간 리스트
+            
+            * 회차 - 시간 선택
+            
+            */
+            
+            $(document).off("click", ".item_time").on("click", ".item_time", function(e) {
+            
+            e.preventDefault();
+            
+            var $this = $(this);
+            
+            
+            
+            $(".item_time").removeClass("on");
+            
+            $this.addClass("on");
+            
+            
+            
+            var paramsObj = {
+            
+            "prodId": $this.attr('data-prodid'),
+            
+            "pocCode": $this.attr('data-poccode'),
+            
+            "perfDay": $this.attr('data-perfday'),
+            
+            "scheduleNo": $this.attr('data-scheduleno'),
+            
+            "sellTypeCode": $this.attr('data-selltypecode'),
+            
+            "seatCntDisplayYn": $this.attr('data-seatcntdisplayyn'),
+            
+            "perfTypeCode": $this.attr('data-perftypecode'),
+            
+            "seatPoc": $this.attr('data-seatpoc'),
+            
+            "cancelCloseDt": $this.attr('data-cancelclosedt'),
+            
+            "interlockTypeCode": $("#global_ticket_interlockTypeCode").val()
+            
+            };
+            
+            
+            
+            scheduleService.service.displayGradeListSchedule(paramsObj);
+            
+            });
+            
+            
+            
+            /**
+            
+            * 선예매 대상확인 버튼
+            
+            */
+            
+            $(document).off("click", "#resvAuth").on("click", "#resvAuth", function() {
+            
+            
+            
+            var autheTypeCode = $(this).attr("data-prebtn-authetypecode");
+            
+            var paramsObj = {
+            
+            "prodId": $(this).attr("data-prebtn-prodid"),
+            
+            "pocCode": $(this).attr("data-prebtn-poccode"),
+            
+            "sellTypeCode": $(this).attr("data-prebtn-selltypecode"),
+            
+            "sellCondNo": $(this).attr("data-prebtn-sellcondno"),
+            
+            "autheTypeCode": autheTypeCode,
+            
+            "authYn": $(this).attr("data-prebtn-authyn"),
+            
+            "gradeCode": $("#global_ticket_gradeCode").val()
+            
+            };
+            
+            
+            
+            if (isMelonLogin()) {
+            
+            $("#autheTypeCode").val(autheTypeCode);
+            
+            preSaleService.service.preSaleUserFind(paramsObj);
+            
+            } else {
+            
+            loginService.service.melonPopupLogin();
+            
+            }
+            
+            });
+            
+            
+            
+            /**
+            
+            * 예매하기 버튼 함수
+            
+            */
+            
+            $(document).off("click", "#ticketReservation_Btn").on("click", "#ticketReservation_Btn", function(ev) {
+            
+            //if (!ev.originalEvent.isTrusted)
+            
+            // return;
+            
+            var $this = $(this);
+            
+            var paramsObj = {};
+            
+            paramsObj.prodId = $this.attr("data-prodid");
+            
+            paramsObj.prodTypeCode = $this.attr("data-prodtypecode");
+            
+            paramsObj.pocCode = commonCode.POC_CODE_PC;
+            
+            paramsObj.btnType = "B";
+            
+            paramsObj.autheTypeCode = $this.attr("data-autheTypeCode") != "" ? $this.attr("data-autheTypeCode") : $("#tciketProcessBox_preSaleAutheTypeCode").val();
+            
+            paramsObj.authYn = $this.attr("data-authyn");
+            
+            paramsObj.processType = commonCode.RESERVATION_CLASS_TYPE_DEFAULT;
+            
+            
+            
+            reservationService.service.reservationInit(paramsObj);
+            
+            }).click;
+            
+            //$('#ticketReservation_Btn').click()
+            
+            
+            
+            /**
+            
+            * 할인쿠폰 다운로드 버튼
+            
+            */
+            
+            $(document).off("click", "#ticketCoupon_Download_Btn").on("click", "#ticketCoupon_Download_Btn", function() {
+            
+            
+            
+            var $this = $(this);
+            
+            var paramsObj = {
+            
+            prodId: $this.attr("data-prodid"),
+            
+            couponId: $this.attr("data-couponid")
+            
+            };
+            
+            
+            
+            if (isMelonLogin()) {
+            
+            couponService.service.downloadCoupon(paramsObj);
+            
+            } else {
+            
+            loginService.service.melonPopupLogin();
+            
+            }
+            
+            });
+            
+            
+            
+            /**
+            
+            * 제휴사
+            
+            * 쿠폰배너 하나씩 다운받기 버튼
+            
+            */
+            
+            $(document).off("click", ".affiliateCompanyCouponDownBtn").on("click", ".affiliateCompanyCouponDownBtn", function() {
+            
+            
+            
+            if (isMelonLogin()) {
+            
+            var $this = $(this);
+            
+            var paramsObj = {
+            
+            cupnId: $this.attr("data-cupnid"),
+            
+            prodId: $("#prodIdNum").val()
+            
+            };
+            
+            
+            
+            couponService.service.coopCoupon(paramsObj);
+            
+            
+            
+            } else {
+            
+            loginService.service.melonPopupLogin();
+            
+            }
+            
+            });
+            
+            
+            
+            /**
+            
+            * 제휴사
+            
+            * 쿠폰배너 한번에 다운받기 버튼
+            
+            */
+            
+            $(document).off("click", "#cupnAllDown").on("click", "#cupnAllDown", function() {
+            
+            
+            
+            if (isMelonLogin()) {
+            
+            var $couponListDom = $("#affiliateCompanyBannerCouponList").find("a");
+            
+            
+            
+            var cupnIdArray = _.map($couponListDom, function(val) {
+            
+            return $(val).attr("data-cupnid");
+            
+            });
+            
+            
+            
+            var paramsObj = {
+            
+            cupnId: cupnIdArray,
+            
+            prodId: $("#prodIdNum").val()
+            
+            };
+            
+            
+            
+            couponService.service.coopCoupon(paramsObj);
+            
+            } else {
+            
+            loginService.service.melonPopupLogin();
+            
+            }
+            
+            });
+            
+            
+            
+            /**
+            
+            * 제휴사
+            
+            * 쿠폰 팝업 닫기 버튼
+            
+            */
+            
+            $('#btn_layerpopup_close').on('click', function() {
+            
+            if ($("#popup_chk").is(":checked")) {
+            
+            setCookie("hide_coop_banner", true, 1, "/", "ticket.melon.com");
+            
+            }
+            
+            $("#coopBanner").remove();
+            
+            
+            
+            location.href = "/performance/index.htm?prodId=" + $("#prodIdNum").val();
+            
+            });
+            
+            
+            
+            /**
+            
+            * 공연장 클릭시
+            
+            * 공연장정보로 이동 버튼
+            
+            */
+            
+            $(document).off("click", "#performanceHallBtn").on("click", "#performanceHallBtn", function() {
+            
+            location.hash = "review_area";
+            
+            try {
+            
+            $('#sub_place').click();
+            
+            } catch (e) {}
+            
+            });
+            
+            
+            
+            /**
+            
+            * 공연장 클릭시
+            
+            * 공연장정보로 이동 버튼
+            
+            */
+            
+            $(document).off("click", "#sub_place").on("click", "#sub_place", function() {
+            
+            var performanceHall_locLati = $("#global_ticket_performanceHall_locLati").val();
+            
+            var performanceHall_locLogi = $("#global_ticket_performanceHall_locLogi").val();
+            
+            
+            
+            if ($('#titleFrame').attr('src') == null) {
+            
+            var frameUrl = "/common/popup/mapViewer.htm?locLati=" + performanceHall_locLati + "&locLogi=" + performanceHall_locLogi;
+            
+            $('#titleFrame').attr('src', frameUrl);
+            
+            }
+            
+            });
+            
+            
+            
+            /**
+            
+            * 공연장 정보 이미지 더보기 버튼
+            
+            */
+            
+            $(".box_concert_img .box_thumb .btn_more").click(function() {
+            
+            var thmH = $(".list_thumb").css("height");
+            
+            if (thmH == "200px") {
+            
+            // 접힌 상태
+            
+            $(".list_thumb").css("height", "auto");
+            
+            $(this).removeClass("up").text("접기");
+            
+            } else {
+            
+            // 펼쳐진 상태
+            
+            $(".list_thumb").css("height", "200px");
+            
+            $(this).addClass("up").text("더보기");
+            
+            }
+            
+            });
+            
+            
+            
+            /**
+            
+            * 텝메뉴 버튼
+            
+            */
+            
+            $(".wrap_detail_tab").children('.list_detail_menu').children('li').click(function(e) {
+            
+            e.preventDefault();
+            
+            var _this = $(this);
+            
+            tabMenuService.service.tabMenuEvent(_this);
+            
+            });
+            
+            
+            
+            }$('.item_date.first').click();
+            
+            
+            
+            
+            
+            a = setInterval(function (){
+            
+            $('.item_time.first').click();
+            
+            $('#ticketReservation_Btn').click()
+            
+            clearInterval(a);
+            
+            },3000)
+            
+            //중지함수 : clearInterval(a);
+            
+            });
+            
+            
+            
+            </p>
+        <li> 콘솔 복붙, 창 여러개, 1-2분전부터 엔터, 59분58초쯤 하나 </br> <li>날짜,회차 선택 안됨!!!</br>
+    </body>
+</html>
